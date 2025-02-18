@@ -1,0 +1,69 @@
+# imports
+
+import os
+import requests
+from bs4 import BeautifulSoup
+from typing import List
+from dotenv import load_dotenv
+from openai import OpenAI
+import google.generativeai
+import anthropic
+import gradio as gr
+
+# Load environment variables in a file called .env
+# Print the key prefixes to help with any debugging
+
+load_dotenv()
+deepseek_api_key=os.getenv('DEEPSEEK_API_KEY')
+
+if deepseek_api_key:
+    print(f"Deepseek API Key exists and begins {deepseek_api_key[:7]}")
+else:
+    print("Deepseek API Key not set")
+
+
+from openai import OpenAI
+import sys
+
+try:
+    client = OpenAI(
+        api_key="deepseek_api_key",
+        base_url="https://api.deepseek.com"
+    )
+    
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant"},
+            {"role": "user", "content": "Hello"},
+        ],
+        stream=False
+    )
+    
+    print(response.choices[0].message.content)
+
+except Exception as e:
+    print(f"Error type: {type(e)}")
+    print(f"Error message: {str(e)}")
+    print(f"Python version: {sys.version}")
+
+def chat(message, history):
+    messages = [{"role": "system", "content": system_message}] + history + [{"role": "user", "content": message}]
+
+    print("History is:")
+    print(history)
+    print("And messages is:")
+    print(messages)
+
+    stream = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=messages,
+        stream=True
+    )
+
+    response = ""
+    for chunk in stream:
+        response += chunk.choices[0].delta.content or ''
+        yield response
+
+gr.ChatInterface(fn=chat, type="messages").launch(share=True)
